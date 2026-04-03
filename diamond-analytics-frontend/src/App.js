@@ -1,17 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // Corregido el path automático
+import { AuthProvider } from './context/AuthContext';
 
-// Componentes de Estructura
 import PrivateRoute from './components/PrivateRoute';
 import Layout from './components/Layout';
 
-// Páginas
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import GamesToday from './pages/GamesToday';   // 👈 Importa el componente
 
-// Estilos Globales (Asegúrate de que el CSS bonito esté aquí)
 import './App.css';
 
 function App() {
@@ -19,26 +17,22 @@ function App() {
         <BrowserRouter>
             <AuthProvider>
                 <Routes>
-                    {/* --- RUTAS PÚBLICAS --- */}
+                    {/* PUBLIC */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
 
-                    {/* --- RUTAS PROTEGIDAS (Requieren Login) --- */}
+                    {/* PRIVATE */}
                     <Route element={<PrivateRoute />}>
                         <Route element={<Layout />}>
-                            {/* Todas las rutas aquí dentro tendrán Sidebar y Navbar automáticamente */}
                             <Route path="/dashboard" element={<Dashboard />} />
-
-                            {/* Aquí puedes agregar más adelante:
-                  <Route path="/stats" element={<Stats />} />
-                  <Route path="/predictions" element={<Predictions />} />
-              */}
+                            <Route path="/games" element={<GamesToday />} />   {/* 👈 Nueva ruta */}
+                            {/* Aquí agregarás más rutas en el futuro */}
                         </Route>
                     </Route>
 
-                    {/* --- REDIRECCIONES --- */}
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                    {/* REDIRECT */}
+                    <Route path="/" element={<Navigate to="/dashboard" />} />
+                    <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>

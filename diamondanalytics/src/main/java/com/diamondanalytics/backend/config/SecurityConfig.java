@@ -4,6 +4,7 @@ import com.diamondanalytics.backend.security.AuthTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -49,14 +50,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        http
+                // 🔥 HABILITA CORS
+                .cors(cors -> {})
+
+                // ❌ DESACTIVA CSRF (API REST)
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // 🔐 SIN SESIÓN (JWT)
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                // 🔑 AUTORIZACIÓN
                 .authorizeHttpRequests(auth -> auth
+                        // 👇 CLAVE PARA QUE NO FALLE FETCH
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // 🔓 RUTAS PÚBLICAS
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // 🔒 TODO LO DEMÁS PROTEGIDO
                         .anyRequest().authenticated()
                 );
+
+        // 🔐 PROVIDER
         http.authenticationProvider(authenticationProvider());
+
+        // 🔑 FILTRO JWT
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }

@@ -1,108 +1,91 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import dashboardService from '../services/dashboardService';
 
 const Dashboard = () => {
     const { user } = useAuth();
     const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchSummary = async () => {
             try {
-                // Simulación de datos iniciales
-                setSummary({
-                    totalBets: 124,
-                    wonBets: 78,
-                    lostBets: 46,
-                    roi: +12.5,
-                    winRate: 62.9,
-                    profit: "+$1,240"
-                });
-            } catch (error) {
-                console.error(error);
+                const data = await dashboardService.getSummary();
+                setSummary(data);
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
             } finally {
-                setTimeout(() => setLoading(false), 600);
+                setLoading(false);
             }
         };
-        fetchSummary();
+
+        if (user) {
+            fetchSummary();
+        }
     }, [user]);
 
-    if (loading) return (
-        <div className="dashboard-loading">
-            <div className="spinner-mini">⚾</div>
-            <p>Sincronizando métricas de mercado...</p>
-        </div>
-    );
+    if (loading) {
+        return (
+            <div className="dashboard-loading">
+                <div className="spinner-mini">⚾</div>
+                <p>Sincronizando métricas...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="dashboard-error">
+                <p>⚠️ {error}</p>
+            </div>
+        );
+    }
+
+    if (!summary) {
+        return <p>No hay datos disponibles</p>;
+    }
+
+    // Calcular winRate y profit a partir de los datos reales
+    const { totalBets, wonBets, lostBets, roi } = summary;
+    const winRate = totalBets > 0 ? ((wonBets / totalBets) * 100).toFixed(1) : 0;
+    // El profit se puede calcular a partir del ROI y el monto total apostado, pero como no tenemos el monto total en este DTO,
+    // lo dejamos como "no disponible" o puedes agregar un campo profit al backend.
+    // Por ahora mostraremos el ROI como beneficio relativo.
+    const profitDisplay = roi ? `${roi}%` : '0%';
 
     return (
         <div className="dashboard-content">
             <header className="dashboard-header">
-                <div className="welcome-text">
-                    <h1>Resumen de Actividad</h1>
-                    <p>Bienvenido de nuevo, <strong>{user?.username}</strong>. Aquí tienes el estado de tu bankroll.</p>
-                </div>
-                <div className="date-badge">
-                    {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
-                </div>
+                <h1>Resumen</h1>
+                <p>Bienvenido, {user?.username}</p>
             </header>
 
             <div className="stats-grid">
-                <div className="stat-card accent">
-                    <div className="stat-icon">💰</div>
-                    <div className="stat-data">
-                        <h3>Beneficio Total</h3>
-                        <p className="stat-value">{summary.profit}</p>
-                        <span className="stat-trend positive">↑ 4.2% esta semana</span>
-                    </div>
+                <div className="stat-card">
+                    <h3>ROI (Beneficio)</h3>
+                    <p>{roi}%</p>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">📊</div>
-                    <div className="stat-data">
-                        <h3>Total Apuestas</h3>
-                        <p className="stat-value">{summary.totalBets}</p>
-                        <span className="stat-label">Operaciones ejecutadas</span>
-                    </div>
+                    <h3>Total Apuestas</h3>
+                    <p>{totalBets}</p>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">🎯</div>
-                    <div className="stat-data">
-                        <h3>Win Rate</h3>
-                        <p className="stat-value">{summary.winRate}%</p>
-                        <div className="progress-bar">
-                            <div className="progress-fill" style={{width: `${summary.winRate}%`}}></div>
-                        </div>
-                    </div>
+                    <h3>Win Rate</h3>
+                    <p>{winRate}%</p>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">📈</div>
-                    <div className="stat-data">
-                        <h3>ROI Global</h3>
-                        <p className={`stat-value ${summary.roi >= 0 ? 'text-positive' : 'text-negative'}`}>
-                            {summary.roi}%
-                        </p>
-                        <span className="stat-label">Retorno de inversión</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="dashboard-lower-grid">
-                <div className="main-chart-placeholder">
-                    <div className="placeholder-content">
-                        <h3>🤖 Predicciones Sugeridas por IA</h3>
-                        <p>Los modelos de Gemini están analizando los juegos de hoy...</p>
-                        <div className="skeleton-loader"></div>
-                        <div className="skeleton-loader short"></div>
-                    </div>
+                    <h3>Apuestas Ganadas</h3>
+                    <p>{wonBets}</p>
                 </div>
 
-                <div className="side-panel-placeholder">
-                    <h3>Últimos Movimientos</h3>
-                    <div className="empty-state">
-                        <p>No hay apuestas recientes para mostrar.</p>
-                    </div>
+                <div className="stat-card">
+                    <h3>Apuestas Perdidas</h3>
+                    <p>{lostBets}</p>
                 </div>
             </div>
         </div>

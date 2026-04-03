@@ -31,6 +31,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- 🌐 WEBCLIENT (WEBFLUX) 🔥 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
         <!-- 🗄️ JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -49,7 +55,7 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- 🔥 JWT (ESTO SOLUCIONA TU JwtUtils) -->
+        <!-- 🔥 JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>

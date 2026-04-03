@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Verificamos el usuario al montar el componente
+    // Verificar usuario al montar
     useEffect(() => {
         const checkAuth = () => {
             try {
@@ -19,11 +19,9 @@ export const AuthProvider = ({ children }) => {
                 }
             } catch (error) {
                 console.error("Error cargando sesión:", error);
-                localStorage.removeItem('user'); // Limpiar si el JSON está corrupto
+                localStorage.removeItem('user');
             } finally {
-                // Pequeño delay artificial para que el spinner de béisbol
-                // se vea fluido y no desaparezca de golpe
-                setTimeout(() => setLoading(false), 800);
+                setTimeout(() => setLoading(false), 500);
             }
         };
 
@@ -33,8 +31,6 @@ export const AuthProvider = ({ children }) => {
     const login = async (credentials) => {
         try {
             const data = await authService.login(credentials);
-            // El authService ya debería manejar el localStorage,
-            // pero si no, es bueno centralizarlo aquí
             setUser(data);
             return { success: true, data };
         } catch (error) {
@@ -55,7 +51,6 @@ export const AuthProvider = ({ children }) => {
     const logout = useCallback(() => {
         authService.logout();
         setUser(null);
-        // Opcional: Redirigir manualmente o limpiar estados globales
     }, []);
 
     const value = {
@@ -64,7 +59,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        isAuthenticated: !!user // Helper útil para checks rápidos
+        isAuthenticated: !!user
     };
 
     return (

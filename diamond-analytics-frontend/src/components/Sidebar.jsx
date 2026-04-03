@@ -1,11 +1,9 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-// Si usas react-router-dom, te recomiendo cambiar <a> por <Link>
-import { Link, useLocation } from 'react-router-dom';
 
 const Sidebar = () => {
     const { user, logout } = useAuth();
-    // const location = useLocation(); // Para marcar el link activo
 
     return (
         <aside className="sidebar">
@@ -21,29 +19,29 @@ const Sidebar = () => {
                 <p className="nav-label">Menú Principal</p>
                 <ul>
                     <li className="nav-item">
-                        <a href="/dashboard" className="nav-link active">
+                        <NavLink to="/dashboard" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
                             <span className="icon">📊</span> Dashboard
-                        </a>
+                        </NavLink>
                     </li>
                     <li className="nav-item">
-                        <a href="/games" className="nav-link">
+                        <NavLink to="/games" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
                             <span className="icon">📅</span> Juegos del día
-                        </a>
+                        </NavLink>
                     </li>
                     <li className="nav-item">
-                        <a href="/predictions" className="nav-link">
+                        <NavLink to="/predictions" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
                             <span className="icon">🤖</span> Predicciones AI
-                        </a>
+                        </NavLink>
                     </li>
                     <li className="nav-item">
-                        <a href="/bets" className="nav-link">
+                        <NavLink to="/bets" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
                             <span className="icon">💰</span> Mis apuestas
-                        </a>
+                        </NavLink>
                     </li>
                     <li className="nav-item">
-                        <a href="/stats" className="nav-link">
+                        <NavLink to="/stats" className={({ isActive }) => isActive ? "nav-link active" : "nav-link"}>
                             <span className="icon">📈</span> Estadísticas
-                        </a>
+                        </NavLink>
                     </li>
                 </ul>
             </nav>
