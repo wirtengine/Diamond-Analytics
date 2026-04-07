@@ -1,14 +1,18 @@
 package com.diamondanalytics.backend.repository;
 
-import com.diamondanalytics.backend.model.Odds;
 import com.diamondanalytics.backend.model.Game;
+import com.diamondanalytics.backend.model.Odds;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
+@Repository
 public interface OddsRepository extends JpaRepository<Odds, Long> {
-    Optional<Odds> findByGameAndBookmakerAndTimestamp(Game game, String bookmaker, LocalDateTime timestamp);
+
+    // Método existente (si ya lo tienes)
     List<Odds> findByGame(Game game);
-    List<Odds> findByTimestampAfter(LocalDateTime timestamp);
+
+    // NUEVO MÉTODO: Obtener odds ordenadas por timestamp descendente
+    List<Odds> findByGameOrderByTimestampDesc(Game game);
 }
