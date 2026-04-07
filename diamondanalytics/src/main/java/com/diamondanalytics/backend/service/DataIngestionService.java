@@ -14,10 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
+import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DataIngestionService {
@@ -39,7 +39,9 @@ public class DataIngestionService {
     @Transactional
     public void ingestGamesAndOdds() {
         log.info("Iniciando ingesta desde The Odds API");
+
         List<OddsApiResponse> oddsResponses = oddsApiClient.getMlbOdds();
+
         if (oddsResponses == null || oddsResponses.isEmpty()) {
             log.warn("No se obtuvieron datos de la API");
             return;
@@ -54,39 +56,60 @@ public class DataIngestionService {
                 // 2. Obtener o crear juego
                 Game game = gameRepository.findByExternalId(response.getId())
                         .orElse(new Game());
+
                 game.setExternalId(response.getId());
                 game.setHomeTeam(homeTeam);
                 game.setAwayTeam(awayTeam);
-                game.setStartTime(ZonedDateTime.parse(response.getCommenceTime()).toLocalDateTime());
+
+                // ✅ CORRECCIÓN: usar Instant (UTC real)
+                Instant startInstant = Instant.parse(response.getCommenceTime());
+                game.setStartTime(startInstant);
+
                 game.setStatus("scheduled");
+
                 gameRepository.save(game);
 
                 // 3. Guardar odds de cada casa de apuestas
-                for (OddsApiResponse.Bookmaker bookmaker : response.getBookmakers()) {
-                    Odds odds = new Odds();
-                    odds.setGame(game);
-                    odds.setBookmaker(bookmaker.getKey());
-                    odds.setTimestamp(LocalDateTime.now());
+                if (response.getBookmakers() != null) {
+                    for (OddsApiResponse.Bookmaker bookmaker : response.getBookmakers()) {
 
-                    for (OddsApiResponse.Market market : bookmaker.getMarkets()) {
-                        if ("h2h".equals(market.getKey())) {
-                            for (OddsApiResponse.Outcome outcome : market.getOutcomes()) {
-                                if (outcome.getName().equalsIgnoreCase(homeTeam.getName())) {
-                                    odds.setHomeMoneyline(outcome.getPrice());
-                                } else if (outcome.getName().equalsIgnoreCase(awayTeam.getName())) {
-                                    odds.setAwayMoneyline(outcome.getPrice());
+                        Odds odds = new Odds();
+                        odds.setGame(game);
+                        odds.setBookmaker(bookmaker.getKey());
+
+                        // Convertimos a hora local solo para timestamp interno
+                        odds.setTimestamp(LocalDateTime.now());
+
+                        if (bookmaker.getMarkets() != null) {
+                            for (OddsApiResponse.Market market : bookmaker.getMarkets()) {
+
+                                if ("h2h".equalsIgnoreCase(market.getKey())) {
+                                    if (market.getOutcomes() != null) {
+                                        for (OddsApiResponse.Outcome outcome : market.getOutcomes()) {
+
+                                            if (outcome.getName().equalsIgnoreCase(homeTeam.getName())) {
+                                                odds.setHomeMoneyline(outcome.getPrice());
+
+                                            } else if (outcome.getName().equalsIgnoreCase(awayTeam.getName())) {
+                                                odds.setAwayMoneyline(outcome.getPrice());
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                        // Puedes agregar spreads y totals si la API los devuelve
+
+                        oddsRepository.save(odds);
                     }
-                    oddsRepository.save(odds);
                 }
+
                 log.debug("Juego guardado: {} vs {}", awayTeam.getName(), homeTeam.getName());
+
             } catch (Exception e) {
-                log.error("Error procesando juego {}: {}", response.getId(), e.getMessage());
+                log.error("Error procesando juego {}: {}", response.getId(), e.getMessage(), e);
             }
         }
+
         log.info("Ingesta completada");
     }
 

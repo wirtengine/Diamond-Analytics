@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "games", uniqueConstraints = {
@@ -20,7 +20,7 @@ public class Game {
     private Long id;
 
     @Column(unique = true, nullable = false)
-    private String externalId; // ID de API (ej: "game:12345")
+    private String externalId;
 
     @ManyToOne
     @JoinColumn(name = "home_team_id")
@@ -30,14 +30,11 @@ public class Game {
     @JoinColumn(name = "away_team_id")
     private Team awayTeam;
 
-    private LocalDateTime startTime;
+    private Instant startTime;  // <-- cambio clave
 
-    private String status; // "scheduled", "live", "finished"
-
+    private String status;
     private Integer homeScore;
     private Integer awayScore;
-
-    // Para estadísticas adicionales (opcional)
     private Integer homeHits;
     private Integer awayHits;
     private Integer homeErrors;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import gamesService from '../services/gamesService';
-import adminService from '../services/adminService'; // <-- Importa el servicio de administración
+import adminService from '../services/adminService';
 
 const GamesToday = () => {
     const { user } = useAuth();
@@ -30,11 +30,12 @@ const GamesToday = () => {
         try {
             await adminService.ingestGames();
             setIngestMessage('✅ Ingesta completada con éxito. Actualizando juegos...');
-            // Esperar un poco y luego refrescar la lista
+
             setTimeout(() => {
                 fetchGames();
                 setIngestMessage('');
             }, 2000);
+
         } catch (err) {
             setIngestMessage(`❌ Error: ${err.message}`);
         } finally {
@@ -71,7 +72,11 @@ const GamesToday = () => {
             </header>
 
             {error && <div className="alert error">{error}</div>}
-            {ingestMessage && <div className={`alert ${ingestMessage.includes('✅') ? 'success' : 'error'}`}>{ingestMessage}</div>}
+            {ingestMessage && (
+                <div className={`alert ${ingestMessage.includes('✅') ? 'success' : 'error'}`}>
+                    {ingestMessage}
+                </div>
+            )}
 
             {games.length === 0 ? (
                 <div className="empty-state-card">
@@ -79,36 +84,61 @@ const GamesToday = () => {
                 </div>
             ) : (
                 <div className="games-grid">
-                    {games.map(game => (
-                        <div key={game.id} className="game-card">
-                            <div className="card-top">
-                                <span className={`status-pill ${game.status}`}>
-                                    {game.status === 'scheduled' ? 'Programado' :
-                                        game.status === 'finished' ? 'Finalizado' : 'En Vivo'}
-                                </span>
-                                <span className="game-clock">
-                                    {new Date(game.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                            </div>
+                    {games.map(game => {
+                        const gameDate = new Date(game.startTime);
 
-                            <div className="matchup-box">
-                                <div className="team-row">
-                                    <span className="team-name">{game.awayTeam?.name}</span>
-                                    {game.status === 'finished' && <span className="team-score">{game.awayScore}</span>}
-                                </div>
-                                <div className="vs-line">VS</div>
-                                <div className="team-row">
-                                    <span className="team-name">{game.homeTeam?.name}</span>
-                                    {game.status === 'finished' && <span className="team-score">{game.homeScore}</span>}
-                                </div>
-                            </div>
+                        const options = {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'America/Managua'
+                        };
 
-                            <div className="card-actions">
-                                <button className="btn-ai-analyze">✨ IA Predictor</button>
-                                <button className="btn-details">Métricas</button>
+                        const formatted = gameDate.toLocaleString('es-NI', options);
+
+                        return (
+                            <div key={game.id} className="game-card">
+                                <div className="card-top">
+                                    <span className={`status-pill ${game.status}`}>
+                                        {game.status === 'scheduled'
+                                            ? 'Programado'
+                                            : game.status === 'finished'
+                                                ? 'Finalizado'
+                                                : 'En Vivo'}
+                                    </span>
+
+                                    <span className="game-clock">
+                                        {formatted}
+                                    </span>
+                                </div>
+
+                                <div className="matchup-box">
+                                    <div className="team-row">
+                                        <span className="team-name">{game.awayTeam?.name}</span>
+                                        {game.status === 'finished' && (
+                                            <span className="team-score">{game.awayScore}</span>
+                                        )}
+                                    </div>
+
+                                    <div className="vs-line">VS</div>
+
+                                    <div className="team-row">
+                                        <span className="team-name">{game.homeTeam?.name}</span>
+                                        {game.status === 'finished' && (
+                                            <span className="team-score">{game.homeScore}</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="card-actions">
+                                    <button className="btn-ai-analyze">✨ IA Predictor</button>
+                                    <button className="btn-details">Métricas</button>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>
