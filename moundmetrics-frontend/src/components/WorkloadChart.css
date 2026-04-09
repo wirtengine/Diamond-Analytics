@@ -1,0 +1,72 @@
+.chart-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    transition: transform 0.2s ease;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.chart-header h4 {
+    margin: 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.chart-header .subtitle {
+    margin: 4px 0 0 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.max-value {
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid #dbeafe;
+}
+
+/* Contenedor del Canvas */
+.chart-container {
+    position: relative;
+    height: 250px; /* Altura fija para que no crezca infinito */
+    width: 100%;
+}
+
+/* Estado Vacío */
+.chart-card.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+}
+
+.empty-state p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+/* Ajustes para pantallas pequeñas */
+@media (max-width: 480px) {
+    .chart-card {
+        padding: 16px;
+    }
+    .chart-container {
+        height: 200px;
+    }
+}

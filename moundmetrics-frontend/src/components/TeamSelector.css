@@ -1,0 +1,83 @@
+:root {
+    --primary-color: #3b82f6;
+    --text-main: #1f2937;
+    --text-muted: #6b7280;
+    --border-color: #d1d5db;
+    --bg-input: #ffffff;
+    --transition: all 0.2s ease-in-out;
+}
+
+.selector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 300px;
+}
+
+.selector-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-left: 4px;
+}
+
+.select-custom-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select-field {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 1rem;
+    color: var(--text-main);
+    background-color: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    outline: none;
+    transition: var(--transition);
+
+    /* Quitamos la flecha por defecto del navegador */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Efectos al pasar el mouse y al hacer focus */
+.select-field:hover {
+    border-color: #9ca3af;
+}
+
+.select-field:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* Estilo de la flecha personalizada */
+.select-icon {
+    position: absolute;
+    right: 12px;
+    pointer-events: none; /* Para que al hacer click en la flecha, se abra el select */
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+}
+
+/* Mensajes de estado */
+.loader-text {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.error-message {
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #fecaca;
+    font-size: 0.85rem;
+}
