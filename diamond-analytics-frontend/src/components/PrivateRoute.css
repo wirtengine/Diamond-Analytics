@@ -1,0 +1,42 @@
+.loading-screen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #0f172a; /* El mismo azul oscuro del Sidebar */
+    color: white;
+    font-family: 'Inter', sans-serif;
+}
+
+.loader-container {
+    text-align: center;
+}
+
+.baseball-spinner {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: inline-block;
+    animation: spin-and-pulse 2s infinite ease-in-out;
+}
+
+.loader-container p {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 10px;
+}
+
+/* Animación: Gira y crece un poco para dar vida */
+@keyframes spin-and-pulse {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.2);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}

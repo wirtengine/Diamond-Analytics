@@ -1,0 +1,152 @@
+/* --- CONTENEDOR DE JUEGOS --- */
+.games-container {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.header-info h1 {
+    font-size: 1.8rem;
+    color: #0f172a;
+    margin: 0;
+}
+
+.header-info p {
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.refresh-btn {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background: #f8fafc;
+    border-color: #38bdf8;
+}
+
+/* --- GRID Y TARJETAS --- */
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.game-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1.2rem;
+}
+
+.status-pill {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-pill.scheduled { background: #e0f2fe; color: #0369a1; }
+.status-pill.finished { background: #f1f5f9; color: #475569; }
+.status-pill.live { background: #dcfce7; color: #15803d; border: 1px solid #15803d; }
+
+.matchup-box {
+    padding: 1rem 0;
+}
+
+.team-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.team-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.team-score {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #0f172a;
+}
+
+.vs-line {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #cbd5e1;
+    text-align: center;
+    position: relative;
+    margin: 4px 0;
+}
+
+.vs-line::before, .vs-line::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 42%;
+    height: 1px;
+    background: #f1f5f9;
+}
+.vs-line::before { left: 0; }
+.vs-line::after { right: 0; }
+
+/* --- ACCIONES --- */
+.card-actions {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 10px;
+    margin-top: 1.2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-ai-analyze {
+    background: #0f172a;
+    color: #38bdf8;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-details {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-ai-analyze:hover { background: #1e293b; }

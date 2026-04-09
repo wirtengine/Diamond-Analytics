@@ -1,0 +1,139 @@
+/* --- VARIABLES Y RESET --- */
+:root {
+  --sidebar-width: 260px;
+  --navbar-height: 70px;
+  --sidebar-bg: #0f172a;
+  --sidebar-accent: #38bdf8;
+  --bg-main: #f1f5f9;
+  --transition: all 0.3s ease;
+}
+
+* {
+  box-sizing: border-box; /* Esto evita que el contenido "se coma" los márgenes */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+}
+
+/* --- ESTRUCTURA PRINCIPAL (EL FIX) --- */
+.layout-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--sidebar-bg);
+  position: fixed; /* Fijo a la izquierda */
+  left: 0;
+  top: 0;
+  z-index: 100; /* Siempre encima */
+  padding: 1.5rem;
+  color: white;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width); /* EMPUJA el contenido para que no toque el sidebar */
+  min-width: 0; /* Evita que el grid rompa el layout */
+  display: flex;
+  flex-direction: column;
+}
+
+.page-container {
+  padding: 2rem;
+  max-width: 100%;
+}
+
+/* --- DISEÑO DE LOS JUEGOS (BONITO) --- */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.game-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  transition: transform 0.2s;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.status-pill {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.status-pill.scheduled { background: #f1f5f9; color: #475569; }
+.status-pill.live { background: #dcfce7; color: #15803d; border: 1px solid #15803d; }
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 5px 0;
+}
+
+.vs-line {
+  text-align: center;
+  font-size: 0.6rem;
+  color: #cbd5e1;
+  margin: 10px 0;
+  font-weight: 900;
+}
+
+.card-actions {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 8px;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn-ai-analyze {
+  background: var(--sidebar-bg);
+  color: var(--sidebar-accent);
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* --- BOTONES DE CABECERA --- */
+.btn-secondary { background: white; border: 1px solid #e2e8f0; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+.btn-accent { background: var(--sidebar-bg); color: var(--sidebar-accent); border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; font-weight: 700; }
