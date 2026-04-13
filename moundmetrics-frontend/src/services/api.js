@@ -22,8 +22,14 @@ const fetchJson = async (url, options = {}) => {
     }
 };
 
+// =======================
+// TEAMS
+// =======================
 export const fetchTeams = () => fetchJson(`${API_BASE}/teams`);
 
+// =======================
+// BULLPEN
+// =======================
 export const fetchBullpenStats = (teamId, fromDate, toDate) => {
     const url = new URL(`${API_BASE}/teams/${teamId}/bullpen-stats`);
     if (fromDate) url.searchParams.append('from', fromDate);
@@ -31,11 +37,36 @@ export const fetchBullpenStats = (teamId, fromDate, toDate) => {
     return fetchJson(url);
 };
 
-export const fetchPitchersByTeam = (teamId) => fetchJson(`${API_BASE}/pitchers/team/${teamId}`);
+// =======================
+// PITCHERS
+// =======================
+export const fetchPitchersByTeam = (teamId) =>
+    fetchJson(`${API_BASE}/pitchers/team/${teamId}`);
 
-export const fetchWorkload = (pitcherId, days = 7) => fetchJson(`${API_BASE}/pitchers/${pitcherId}/workload?days=${days}`);
+export const fetchWorkload = (pitcherId, days = 7) =>
+    fetchJson(`${API_BASE}/pitchers/${pitcherId}/workload?days=${days}`);
 
-export const fetchPitcherAppearances = (pitcherId, days = 7) => fetchJson(`${API_BASE}/pitchers/${pitcherId}/appearances?days=${days}`);
+export const fetchPitcherAppearances = (pitcherId, days = 7) =>
+    fetchJson(`${API_BASE}/pitchers/${pitcherId}/appearances?days=${days}`);
 
-// ✅ Nueva función agregada
-export const fetchPitcherStats = (pitcherId, days = 7) => fetchJson(`${API_BASE}/pitchers/${pitcherId}/stats?days=${days}`);
+export const fetchPitcherStats = (pitcherId, days = 7) =>
+    fetchJson(`${API_BASE}/pitchers/${pitcherId}/stats?days=${days}`);
+
+// =======================
+// BATTERS (NUEVO)
+// =======================
+
+// Bateadores por equipo
+export const fetchBattersByTeam = (teamId) => {
+    return fetchJson(`${API_BASE}/batters/team/${teamId}`);
+};
+
+// Estadísticas de un bateador
+export const fetchBatterStats = (batterId, days = 7) => {
+    return fetchJson(`${API_BASE}/batters/${batterId}/stats?days=${days}`);
+};
+
+// Apariciones del bateador (para gráficos)
+export const fetchBatterAppearances = (batterId, days = 7) => {
+    return fetchJson(`${API_BASE}/batters/${batterId}/appearances?days=${days}`);
+};

@@ -25,6 +25,10 @@ public class GameSyncService {
     private final PitcherRepository pitcherRepository;
     private final PitchingAppearanceRepository appearanceRepository;
 
+    // 🔥 NUEVO
+    private final BatterRepository batterRepository;
+    private final BattingAppearanceRepository battingAppearanceRepository;
+
     @Transactional
     public void syncGamesForDate(LocalDate date) {
         log.info("Iniciando sincronización para la fecha: {}", date);
@@ -58,7 +62,12 @@ public class GameSyncService {
                 }
 
                 Game game = persistGame(gameNode, liveData);
+
+                // 🔹 Pitchers
                 persistPitchingAppearances(game, liveData);
+
+                // 🔹 Bateadores (FASE 2)
+                persistBattingAppearances(game, liveData);
 
                 log.info("Juego {} sincronizado correctamente", gamePk);
 
@@ -111,7 +120,6 @@ public class GameSyncService {
             JsonNode teamBox = teamsBox.path(side);
             if (teamBox.isMissingNode()) continue;
 
-            // 🔹 FORMATO NUEVO
             JsonNode players = teamBox.path("players");
 
             if (!players.isMissingNode() && players.isObject()) {
@@ -123,7 +131,6 @@ public class GameSyncService {
                     JsonNode playerNode = playerFields.next().getValue();
                     JsonNode stats = playerNode.path("stats").path("pitching");
 
-                    // ✅ CAMBIO AQUÍ (NO BORRA NADA, SOLO MEJORA)
                     String pos = playerNode.path("position").path("abbreviation").asText();
                     boolean esPitcher = "P".equals(pos) || !stats.isMissingNode();
                     if (!esPitcher) continue;
@@ -132,7 +139,6 @@ public class GameSyncService {
                 }
 
             } else {
-                // 🔹 FORMATO ANTIGUO
                 JsonNode pitchersNode = teamBox.path("pitchers");
 
                 if (!pitchersNode.isMissingNode()) {
@@ -142,7 +148,118 @@ public class GameSyncService {
         }
     }
 
-    // 🔥 TODO LO DEMÁS QUEDA EXACTAMENTE IGUAL ↓↓↓
+    // 🔥 NUEVO
+    private void persistBattingAppearances(Game game, JsonNode liveData) {
+        JsonNode boxscore = liveData.path("liveData").path("boxscore");
+        JsonNode teamsBox = boxscore.path("teams");
+
+        for (String side : Arrays.asList("home", "away")) {
+            JsonNode teamBox = teamsBox.path(side);
+            if (teamBox.isMissingNode()) continue;
+
+            JsonNode players = teamBox.path("players");
+            if (players.isMissingNode() || !players.isObject()) continue;
+
+            Iterator<Map.Entry<String, JsonNode>> playerFields = players.fields();
+            while (playerFields.hasNext()) {
+                JsonNode playerNode = playerFields.next().getValue();
+                JsonNode stats = playerNode.path("stats").path("batting");
+                if (stats.isMissingNode()) continue;
+
+                if (getInt(stats, "ab", "atBats") == 0) continue;
+
+                procesarNodoBateador(game, teamBox, playerNode, stats);
+            }
+        }
+    }
+
+    // 🔥 NUEVO
+    private void procesarNodoBateador(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
+        try {
+            int batterId = playerNode.path("person").path("id").asInt();
+            String fullName = playerNode.path("person").path("fullName").asText();
+
+            Batter batter = batterRepository.findById(batterId).orElse(
+                    Batter.builder().id(batterId).fullName(fullName).build()
+            );
+
+            Integer teamId = teamBox.path("team").path("id").asInt();
+            batter.setTeam(teamRepository.getReferenceById(teamId));
+            batter = batterRepository.save(batter);
+
+            BattingAppearance appearance = battingAppearanceRepository
+                    .findByBatterIdAndGameId(batterId, game.getId())
+                    .orElse(BattingAppearance.builder().batter(batter).game(game).build());
+
+            appearance.setAtBats(getInt(stats, "ab", "atBats"));
+            appearance.setRuns(getInt(stats, "r", "runs"));
+            appearance.setHits(getInt(stats, "h", "hits"));
+            appearance.setDoubles(getInt(stats, "2b", "doubles"));
+            appearance.setTriples(getInt(stats, "3b", "triples"));
+            appearance.setHomeRuns(getInt(stats, "hr", "homeRuns"));
+            appearance.setRbi(getInt(stats, "rbi"));
+            appearance.setBaseOnBalls(getInt(stats, "bb", "baseOnBalls"));
+            appearance.setIntentionalWalks(getInt(stats, "ibb", "intentionalWalks"));
+            appearance.setStrikeOuts(getInt(stats, "so", "strikeOuts"));
+            appearance.setStolenBases(getInt(stats, "sb", "stolenBases"));
+            appearance.setCaughtStealing(getInt(stats, "cs", "caughtStealing"));
+            appearance.setHitByPitch(getInt(stats, "hbp", "hitByPitch"));
+            appearance.setSacFlies(getInt(stats, "sf", "sacFlies"));
+            appearance.setSacBunts(getInt(stats, "sh", "sacBunts"));
+
+            appearance.setAvg(calcularAvg(appearance));
+            appearance.setObp(calcularObp(appearance));
+            appearance.setSlg(calcularSlg(appearance));
+            appearance.setOps(calcularOps(appearance));
+
+            appearance.setGameDate(game.getOfficialDate());
+            battingAppearanceRepository.save(appearance);
+
+            log.debug("✅ Bateador {} guardado en juego {}: AB={} H={} HR={}",
+                    fullName, game.getId(), appearance.getAtBats(), appearance.getHits(), appearance.getHomeRuns());
+
+        } catch (Exception e) {
+            log.error("Error guardando bateador en juego {}: {}", game.getId(), e.getMessage(), e);
+        }
+    }
+
+    private BigDecimal calcularAvg(BattingAppearance ba) {
+        if (ba.getAtBats() == null || ba.getAtBats() == 0) return BigDecimal.ZERO;
+        return BigDecimal.valueOf(ba.getHits() != null ? ba.getHits() : 0)
+                .divide(BigDecimal.valueOf(ba.getAtBats()), 3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calcularObp(BattingAppearance ba) {
+        int numerador = (ba.getHits() != null ? ba.getHits() : 0)
+                + (ba.getBaseOnBalls() != null ? ba.getBaseOnBalls() : 0)
+                + (ba.getHitByPitch() != null ? ba.getHitByPitch() : 0);
+
+        int denominador = (ba.getAtBats() != null ? ba.getAtBats() : 0)
+                + (ba.getBaseOnBalls() != null ? ba.getBaseOnBalls() : 0)
+                + (ba.getHitByPitch() != null ? ba.getHitByPitch() : 0)
+                + (ba.getSacFlies() != null ? ba.getSacFlies() : 0);
+
+        if (denominador == 0) return BigDecimal.ZERO;
+
+        return BigDecimal.valueOf(numerador)
+                .divide(BigDecimal.valueOf(denominador), 3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calcularSlg(BattingAppearance ba) {
+        if (ba.getAtBats() == null || ba.getAtBats() == 0) return BigDecimal.ZERO;
+
+        int totalBases = (ba.getHits() != null ? ba.getHits() : 0)
+                + (ba.getDoubles() != null ? ba.getDoubles() : 0)
+                + (ba.getTriples() != null ? ba.getTriples() : 0) * 2
+                + (ba.getHomeRuns() != null ? ba.getHomeRuns() : 0) * 3;
+
+        return BigDecimal.valueOf(totalBases)
+                .divide(BigDecimal.valueOf(ba.getAtBats()), 3, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calcularOps(BattingAppearance ba) {
+        return calcularObp(ba).add(calcularSlg(ba));
+    }
 
     private void procesarNodoPitcher(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
 
