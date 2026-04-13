@@ -24,8 +24,6 @@ public class GameSyncService {
     private final TeamRepository teamRepository;
     private final PitcherRepository pitcherRepository;
     private final PitchingAppearanceRepository appearanceRepository;
-
-    // 🔥 NUEVO
     private final BatterRepository batterRepository;
     private final BattingAppearanceRepository battingAppearanceRepository;
 
@@ -62,11 +60,7 @@ public class GameSyncService {
                 }
 
                 Game game = persistGame(gameNode, liveData);
-
-                // 🔹 Pitchers
                 persistPitchingAppearances(game, liveData);
-
-                // 🔹 Bateadores (FASE 2)
                 persistBattingAppearances(game, liveData);
 
                 log.info("Juego {} sincronizado correctamente", gamePk);
@@ -80,7 +74,6 @@ public class GameSyncService {
     }
 
     private Game persistGame(JsonNode scheduleGame, JsonNode liveData) {
-
         Long gamePk = scheduleGame.path("gamePk").asLong();
 
         Game game = gameRepository.findById(gamePk)
@@ -94,7 +87,6 @@ public class GameSyncService {
         }
 
         JsonNode teams = scheduleGame.path("teams");
-
         Integer homeId = teams.path("home").path("team").path("id").asInt();
         Integer awayId = teams.path("away").path("team").path("id").asInt();
 
@@ -102,7 +94,6 @@ public class GameSyncService {
         game.setAwayTeam(teamRepository.getReferenceById(awayId));
 
         JsonNode linescore = liveData.path("liveData").path("linescore");
-
         game.setHomeScore(linescore.path("teams").path("home").path("runs").asInt());
         game.setAwayScore(linescore.path("teams").path("away").path("runs").asInt());
         game.setStatus("Final");
@@ -111,36 +102,38 @@ public class GameSyncService {
     }
 
     private void persistPitchingAppearances(Game game, JsonNode liveData) {
-
         JsonNode boxscore = liveData.path("liveData").path("boxscore");
         JsonNode teamsBox = boxscore.path("teams");
 
         for (String side : Arrays.asList("home", "away")) {
-
             JsonNode teamBox = teamsBox.path(side);
             if (teamBox.isMissingNode()) continue;
 
             JsonNode players = teamBox.path("players");
-
             if (!players.isMissingNode() && players.isObject()) {
-
                 Iterator<Map.Entry<String, JsonNode>> playerFields = players.fields();
 
                 while (playerFields.hasNext()) {
-
                     JsonNode playerNode = playerFields.next().getValue();
-                    JsonNode stats = playerNode.path("stats").path("pitching");
+                    JsonNode pitchingStats = playerNode.path("stats").path("pitching");
+                    JsonNode battingStats = playerNode.path("stats").path("batting");
 
-                    String pos = playerNode.path("position").path("abbreviation").asText();
-                    boolean esPitcher = "P".equals(pos) || !stats.isMissingNode();
-                    if (!esPitcher) continue;
+                    // Procesar pitcheo si existe
+                    if (!pitchingStats.isMissingNode()) {
+                        String pos = playerNode.path("position").path("abbreviation").asText();
+                        boolean esPitcher = "P".equals(pos) || !pitchingStats.isMissingNode();
+                        if (esPitcher) {
+                            procesarNodoPitcher(game, teamBox, playerNode, pitchingStats);
+                        }
+                    }
 
-                    procesarNodoPitcher(game, teamBox, playerNode, stats);
+                    // ✅ Procesar bateo si existe (para two-way players)
+                    if (!battingStats.isMissingNode()) {
+                        procesarNodoBateador(game, teamBox, playerNode, battingStats);
+                    }
                 }
-
             } else {
                 JsonNode pitchersNode = teamBox.path("pitchers");
-
                 if (!pitchersNode.isMissingNode()) {
                     procesarNodoPitchersAntiguo(game, teamBox, pitchersNode);
                 }
@@ -148,7 +141,6 @@ public class GameSyncService {
         }
     }
 
-    // 🔥 NUEVO
     private void persistBattingAppearances(Game game, JsonNode liveData) {
         JsonNode boxscore = liveData.path("liveData").path("boxscore");
         JsonNode teamsBox = boxscore.path("teams");
@@ -166,14 +158,12 @@ public class GameSyncService {
                 JsonNode stats = playerNode.path("stats").path("batting");
                 if (stats.isMissingNode()) continue;
 
-                if (getInt(stats, "ab", "atBats") == 0) continue;
-
+                // 🔥 Se eliminó el filtro AB==0. Siempre se guarda la aparición.
                 procesarNodoBateador(game, teamBox, playerNode, stats);
             }
         }
     }
 
-    // 🔥 NUEVO
     private void procesarNodoBateador(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
         try {
             int batterId = playerNode.path("person").path("id").asInt();
@@ -262,7 +252,6 @@ public class GameSyncService {
     }
 
     private void procesarNodoPitcher(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
-
         try {
             int pitcherId = playerNode.path("person").path("id").asInt();
             String fullName = playerNode.path("person").path("fullName").asText();

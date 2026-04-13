@@ -22,9 +22,16 @@ public class BatterStatsService {
     private final BattingAppearanceRepository appearanceRepository;
     private final BatterRepository batterRepository;
 
+    private static final LocalDate SEASON_START = LocalDate.of(2026, 3, 26);
+
     public BatterStatsDTO getBatterStats(Integer batterId, int daysBack) {
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(daysBack);
+
+        // 🔥 No empezar antes del inicio de temporada
+        if (start.isBefore(SEASON_START)) {
+            start = SEASON_START;
+        }
 
         List<BattingAppearance> appearances = appearanceRepository
                 .findByBatterIdAndGameDateBetweenOrderByGameDateDesc(batterId, start, end);
@@ -67,25 +74,25 @@ public class BatterStatsService {
             totalSF += ba.getSacFlies() != null ? ba.getSacFlies() : 0;
         }
 
-        // Cálculo de AVG
         BigDecimal avg = totalAB > 0 ?
                 BigDecimal.valueOf(totalH).divide(BigDecimal.valueOf(totalAB), 3, RoundingMode.HALF_UP) :
                 BigDecimal.ZERO;
 
-        // Cálculo de OBP
         int obpNumerator = totalH + totalBB + totalHBP;
         int obpDenominator = totalAB + totalBB + totalHBP + totalSF;
         BigDecimal obp = obpDenominator > 0 ?
                 BigDecimal.valueOf(obpNumerator).divide(BigDecimal.valueOf(obpDenominator), 3, RoundingMode.HALF_UP) :
                 BigDecimal.ZERO;
 
-        // Cálculo de SLG
         int totalBases = totalH + total2B + (total3B * 2) + (totalHR * 3);
         BigDecimal slg = totalAB > 0 ?
                 BigDecimal.valueOf(totalBases).divide(BigDecimal.valueOf(totalAB), 3, RoundingMode.HALF_UP) :
                 BigDecimal.ZERO;
 
         BigDecimal ops = obp.add(slg);
+
+        log.info("🧮 Bateador {} ({}): Juegos={}, AB={}, H={}, HR={}, AVG={}, OPS={}",
+                fullName, batterId, validas.size(), totalAB, totalH, totalHR, avg, ops);
 
         return BatterStatsDTO.builder()
                 .batterId(batterId)
