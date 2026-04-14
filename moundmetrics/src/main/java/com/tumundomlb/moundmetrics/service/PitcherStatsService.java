@@ -24,9 +24,17 @@ public class PitcherStatsService {
     private final PitchingAppearanceRepository appearanceRepository;
     private final PitcherRepository pitcherRepository;
 
+    // ✅ NUEVO: Inicio de temporada 2026 (sin borrar nada del código original)
+    private static final LocalDate SEASON_START = LocalDate.of(2026, 3, 26);
+
     public PitcherStatsDTO getPitcherStats(Integer pitcherId, int daysBack) {
         LocalDate end = LocalDate.now();
         LocalDate start = end.minusDays(daysBack);
+
+        // 🔥 NUEVO: Ajuste para no empezar antes del inicio de temporada
+        if (start.isBefore(SEASON_START)) {
+            start = SEASON_START;
+        }
 
         List<PitchingAppearance> appearances = appearanceRepository
                 .findByPitcherIdAndGameDateBetweenOrderByGameDateDesc(pitcherId, start, end);
@@ -115,7 +123,7 @@ public class PitcherStatsService {
                     .divide(totalInnings, 2, RoundingMode.HALF_UP);
         }
 
-        // 🔍 LOG PARA DEBUG
+        // 🔍 LOG PARA DEBUG (original tuyo, sin cambios)
         log.info("🧮 Pitcher {}: ER={}, IP={}, SO={}, BB={}, K/9={}",
                 pitcherId, totalEarnedRuns, totalInnings, totalStrikeOuts, totalWalks, kPer9);
 

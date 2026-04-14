@@ -27,6 +27,10 @@ public class GameSyncService {
     private final BatterRepository batterRepository;
     private final BattingAppearanceRepository battingAppearanceRepository;
 
+    // ✅ NUEVO
+    private final FielderRepository fielderRepository;
+    private final FieldingAppearanceRepository fieldingAppearanceRepository;
+
     @Transactional
     public void syncGamesForDate(LocalDate date) {
         log.info("Iniciando sincronización para la fecha: {}", date);
@@ -62,6 +66,9 @@ public class GameSyncService {
                 Game game = persistGame(gameNode, liveData);
                 persistPitchingAppearances(game, liveData);
                 persistBattingAppearances(game, liveData);
+
+                // ✅ FILDEO
+                persistFieldingAppearances(game, liveData);
 
                 log.info("Juego {} sincronizado correctamente", gamePk);
 
@@ -118,7 +125,6 @@ public class GameSyncService {
                     JsonNode pitchingStats = playerNode.path("stats").path("pitching");
                     JsonNode battingStats = playerNode.path("stats").path("batting");
 
-                    // Procesar pitcheo si existe
                     if (!pitchingStats.isMissingNode()) {
                         String pos = playerNode.path("position").path("abbreviation").asText();
                         boolean esPitcher = "P".equals(pos) || !pitchingStats.isMissingNode();
@@ -127,7 +133,6 @@ public class GameSyncService {
                         }
                     }
 
-                    // ✅ Procesar bateo si existe (para two-way players)
                     if (!battingStats.isMissingNode()) {
                         procesarNodoBateador(game, teamBox, playerNode, battingStats);
                     }
@@ -158,11 +163,78 @@ public class GameSyncService {
                 JsonNode stats = playerNode.path("stats").path("batting");
                 if (stats.isMissingNode()) continue;
 
-                // 🔥 Se eliminó el filtro AB==0. Siempre se guarda la aparición.
                 procesarNodoBateador(game, teamBox, playerNode, stats);
             }
         }
     }
+
+    // ================= FILDEO =================
+
+    private void persistFieldingAppearances(Game game, JsonNode liveData) {
+        JsonNode boxscore = liveData.path("liveData").path("boxscore");
+        JsonNode teamsBox = boxscore.path("teams");
+
+        for (String side : Arrays.asList("home", "away")) {
+            JsonNode teamBox = teamsBox.path(side);
+            if (teamBox.isMissingNode()) continue;
+
+            JsonNode players = teamBox.path("players");
+            if (players.isMissingNode() || !players.isObject()) continue;
+
+            Iterator<Map.Entry<String, JsonNode>> playerFields = players.fields();
+            while (playerFields.hasNext()) {
+                JsonNode playerNode = playerFields.next().getValue();
+                JsonNode stats = playerNode.path("stats").path("fielding");
+                if (stats.isMissingNode()) continue;
+
+                if (getInt(stats, "po", "putOuts") == 0 &&
+                        getInt(stats, "a", "assists") == 0 &&
+                        getInt(stats, "e", "errors") == 0) {
+                    continue;
+                }
+
+                procesarNodoFilder(game, teamBox, playerNode, stats);
+            }
+        }
+    }
+
+    private void procesarNodoFilder(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
+        try {
+            int fielderId = playerNode.path("person").path("id").asInt();
+            String fullName = playerNode.path("person").path("fullName").asText();
+            String position = playerNode.path("position").path("abbreviation").asText();
+
+            Fielder fielder = fielderRepository.findById(fielderId).orElse(
+                    Fielder.builder().id(fielderId).fullName(fullName).build()
+            );
+
+            Integer teamId = teamBox.path("team").path("id").asInt();
+            fielder.setTeam(teamRepository.getReferenceById(teamId));
+            fielder.setPrimaryPosition(position);
+            fielder = fielderRepository.save(fielder);
+
+            FieldingAppearance appearance = fieldingAppearanceRepository
+                    .findByFielderIdAndGameId(fielderId, game.getId())
+                    .orElse(FieldingAppearance.builder().fielder(fielder).game(game).build());
+
+            appearance.setPutOuts(getInt(stats, "po", "putOuts"));
+            appearance.setAssists(getInt(stats, "a", "assists"));
+            appearance.setErrors(getInt(stats, "e", "errors"));
+            appearance.setDoublePlays(getInt(stats, "dp", "doublePlays"));
+            appearance.setTriplePlays(getInt(stats, "tp", "triplePlays"));
+            appearance.setGamesPlayed(getInt(stats, "g", "gamesPlayed"));
+            appearance.setGamesStarted(getInt(stats, "gs", "gamesStarted"));
+            appearance.setPosition(position);
+            appearance.setGameDate(game.getOfficialDate());
+
+            fieldingAppearanceRepository.save(appearance);
+
+        } catch (Exception e) {
+            log.error("Error guardando filder en juego {}: {}", game.getId(), e.getMessage(), e);
+        }
+    }
+
+    // ================= RESTO ORIGINAL =================
 
     private void procesarNodoBateador(Game game, JsonNode teamBox, JsonNode playerNode, JsonNode stats) {
         try {
@@ -204,9 +276,6 @@ public class GameSyncService {
 
             appearance.setGameDate(game.getOfficialDate());
             battingAppearanceRepository.save(appearance);
-
-            log.debug("✅ Bateador {} guardado en juego {}: AB={} H={} HR={}",
-                    fullName, game.getId(), appearance.getAtBats(), appearance.getHits(), appearance.getHomeRuns());
 
         } catch (Exception e) {
             log.error("Error guardando bateador en juego {}: {}", game.getId(), e.getMessage(), e);
@@ -256,10 +325,6 @@ public class GameSyncService {
             int pitcherId = playerNode.path("person").path("id").asInt();
             String fullName = playerNode.path("person").path("fullName").asText();
 
-            if (log.isDebugEnabled()) {
-                log.debug("📊 Stats recibidos para pitcher {} (juego {}): {}", pitcherId, game.getId(), stats.toString());
-            }
-
             Pitcher pitcher = pitcherRepository.findById(pitcherId).orElse(
                     Pitcher.builder().id(pitcherId).fullName(fullName).build()
             );
@@ -300,9 +365,6 @@ public class GameSyncService {
             appearance.setGameDate(game.getOfficialDate());
 
             appearanceRepository.save(appearance);
-
-            log.info("💾 {} | IP: {} | H: {} | ER: {} | BB: {} | SO: {} | P: {}",
-                    fullName, ipStr, hits, er, bb, so, pitches);
 
         } catch (Exception e) {
             log.error("Error guardando pitcher en juego {}: {}", game.getId(), e.getMessage(), e);
